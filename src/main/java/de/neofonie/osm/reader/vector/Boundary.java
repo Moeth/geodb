@@ -46,37 +46,15 @@ public class Boundary implements Shape {
     }
 
     public boolean contains(Boundary other) {
-        if (!boundingBox.intersects(other.boundingBox)) {
-            return false;
-        }
-        for (Polygon polygon : other.outerPolygons) {
-            if (!polygon.isContainedBy(outerPolygons)) {
-                return false;
-            }
-        }
-        for (Polygon polygon : other.outerPolygons) {
-            if (polygon.isContainedBy(innerPolygons)) {
-                return false;
-            }
-        }
-        return true;
+        return boundingBox.intersects(other.boundingBox)
+                && Polygon.allMatch(other.outerPolygons, outerPolygons, Polygon::isContainedBy)
+                && Polygon.isNotContainedBy(other.outerPolygons, innerPolygons);
     }
 
     public boolean intersects(Boundary other) {
-        if (!boundingBox.intersects(other.boundingBox)) {
-            return false;
-        }
-        for (Polygon polygon : other.outerPolygons) {
-            if (!polygon.intersectedBy(outerPolygons)) {
-                return false;
-            }
-        }
-        for (Polygon polygon : other.outerPolygons) {
-            if (polygon.isContainedBy(innerPolygons)) {
-                return false;
-            }
-        }
-        return true;
+        return boundingBox.intersects(other.boundingBox)
+                && Polygon.allMatch(other.outerPolygons, outerPolygons, Polygon::intersectedBy)
+                && Polygon.isNotContainedBy(other.outerPolygons, innerPolygons);
     }
 
     @Override

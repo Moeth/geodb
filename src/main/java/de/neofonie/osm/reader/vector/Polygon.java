@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class Polygon implements Shape {
@@ -67,10 +68,6 @@ public class Polygon implements Shape {
                 return new Polygon(result);
             }
             Way current = getFollowingWay(last, ways);
-            if (current == null) {
-                throw new IllegalArgumentException("Not closed polygon");
-//                throw new IllegalArgumentException(toString("No following found", result, ways));
-            }
             addToResult(ways, result, current);
         }
         final Node last = result.get(result.size() - 1);
@@ -100,15 +97,10 @@ public class Polygon implements Shape {
 
     private static Way getFollowingWay(final Node lastWayNode, List<Way> ways) {
         Preconditions.checkNotNull(lastWayNode);
-        for (Way way : ways) {
-            if (lastWayNode.equals(way.getFirstWayNode())) {
-                return way;
-            }
-            if (lastWayNode.equals(way.getLastWayNode())) {
-                return way;
-            }
-        }
-        return null;
+        return ways.stream()
+                .filter(way -> lastWayNode.equals(way.getFirstWayNode()) || lastWayNode.equals(way.getLastWayNode()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Not closed polygon"));
     }
 
     private static String toString(String message, List<Node> result, List<Way> ways) {
@@ -129,14 +121,10 @@ public class Polygon implements Shape {
     }
 
     public boolean isNodeWithinArea(org.openstreetmap.osmosis.core.domain.v0_6.Node node) {
-        double latitude = node.getLatitude();
-        double longitude = node.getLongitude();
-
-        return area.contains(longitude, latitude);
+        return area.contains(node.getLongitude(), node.getLatitude());
     }
 
     public boolean intersects(Polygon polygon) {
-
         if (!getBoundingBox().intersects(polygon.getBoundingBox())) {
             return false;
         }
@@ -162,20 +150,18 @@ public class Polygon implements Shape {
     }
 
     public boolean isContainedBy(Collection<Polygon> polygons) {
-        for (Polygon polygon : polygons) {
-            if (polygon.contains(this)) {
-                return true;
-            }
-        }
-        return false;
+        return polygons.stream().anyMatch(polygon -> polygon.contains(this));
     }
 
     public boolean intersectedBy(Collection<Polygon> polygons) {
-        for (Polygon polygon : polygons) {
-            if (polygon.intersects(this)) {
-                return true;
-            }
-        }
-        return false;
+        return polygons.stream().anyMatch(polygon -> polygon.intersects(this));
+    }
+
+    public static boolean isNotContainedBy(Collection<Polygon> o1, Collection<Polygon> o2) {
+        return o1.stream().noneMatch(polygon -> polygon.isContainedBy(o2));
+    }
+
+    public static boolean allMatch(final Collection<Polygon> p1, final Collection<Polygon> p2, BiFunction<Polygon, Collection<Polygon>, Boolean> function) {
+        return p1.stream().allMatch(polygon -> function.apply(polygon, p2));
     }
 }
