@@ -11,7 +11,7 @@ import java.util.List;
 public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.Way> {
 
     private static final Logger log = LoggerFactory.getLogger(Way.class);
-    private final List<Node> wayNodes = new ArrayList<>();
+    private final List<NodeData> wayNodeData = new ArrayList<>();
     private final List<Long> wayNodesIds = new ArrayList<>();
     private final RelationHolder relationHolder;
 
@@ -23,16 +23,16 @@ public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.
         }
     }
 
-    public List<Node> getWayNodes() {
-        if (wayNodes.isEmpty()) {
+    public List<NodeData> getWayNodeData() {
+        if (wayNodeData.isEmpty()) {
             for (Long wayNode : wayNodesIds) {
-                final Node node = relationHolder.getNode(wayNode);
-                if (node != null) {
-                    wayNodes.add(node);
+                final NodeData nodeData = relationHolder.getNode(wayNode);
+                if (nodeData != null) {
+                    wayNodeData.add(nodeData);
                 }
             }
         }
-        return Collections.unmodifiableList(wayNodes);
+        return Collections.unmodifiableList(wayNodeData);
     }
 
     public static List<Way> getWays(List<AbstractEntity<?>> entities) {
@@ -51,13 +51,13 @@ public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.
         return result;
     }
 
-    public Node getLastWayNode() {
-        final List<Node> wayNodes = getWayNodes();
-        return wayNodes.get(wayNodes.size() - 1);
+    public NodeData getLastWayNode() {
+        final List<NodeData> wayNodeData = getWayNodeData();
+        return wayNodeData.get(wayNodeData.size() - 1);
     }
 
-    public Node getFirstWayNode() {
-        final List<Node> wayNodes = getWayNodes();
-        return wayNodes.get(0);
+    public NodeData getFirstWayNode() {
+        final List<NodeData> wayNodeData = getWayNodeData();
+        return wayNodeData.get(0);
     }
 }

@@ -2,7 +2,7 @@ package de.neofonie.osm.reader.vector;
 
 import com.google.common.base.Preconditions;
 import de.neofonie.osm.reader.pipeline.AbstractEntity;
-import de.neofonie.osm.reader.pipeline.Node;
+import de.neofonie.osm.reader.pipeline.NodeData;
 import de.neofonie.osm.reader.pipeline.Way;
 
 import java.awt.geom.Area;
@@ -19,12 +19,12 @@ public class Polygon implements Shape {
 
     private final Area area;
 
-    private Polygon(List<Node> polygonLine) {
+    private Polygon(List<NodeData> polygonLine) {
         area = createArea(polygonLine);
     }
 
     public static Polygon createPolygon(Way way) {
-        return new Polygon(way.getWayNodes());
+        return new Polygon(way.getWayNodeData());
     }
 
     public static List<Polygon> createClosedPolygons(List<AbstractEntity<?>> entities) {
@@ -41,27 +41,27 @@ public class Polygon implements Shape {
         return result;
     }
 
-    private static Area createArea(List<Node> polygonLine) {
+    private static Area createArea(List<NodeData> polygonLine) {
         Path2D.Double polygonPath = new Path2D.Double();
-        Node previous = null;
-        for (final Node node : polygonLine) {
+        NodeData previous = null;
+        for (final NodeData nodeData : polygonLine) {
             if (previous == null) {
-                polygonPath.moveTo(node.getLongitude(), node.getLatitude());
-            } else if (!previous.equals(node)) {
-                polygonPath.lineTo(node.getLongitude(), node.getLatitude());
+                polygonPath.moveTo(nodeData.getLongitude(), nodeData.getLatitude());
+            } else if (!previous.equals(nodeData)) {
+                polygonPath.lineTo(nodeData.getLongitude(), nodeData.getLatitude());
             }
-            previous = node;
+            previous = nodeData;
         }
         return new Area(polygonPath);
     }
 
     private static Polygon createPolygonLine(final List<Way> ways) {
 
-        final List<Node> result = new ArrayList<>();
+        final List<NodeData> result = new ArrayList<>();
         addToResult(ways, result, ways.get(0));
-        final Node first = result.get(0);
+        final NodeData first = result.get(0);
         while (!ways.isEmpty()) {
-            final Node last = result.get(result.size() - 1);
+            final NodeData last = result.get(result.size() - 1);
 
             if (first.equals(last)) {
                 //Polygon found - there exist another one
@@ -70,40 +70,40 @@ public class Polygon implements Shape {
             Way current = getFollowingWay(last, ways);
             addToResult(ways, result, current);
         }
-        final Node last = result.get(result.size() - 1);
+        final NodeData last = result.get(result.size() - 1);
         Preconditions.checkArgument(first.equals(last));
         return new Polygon(result);
     }
 
-    private static void addToResult(List<Way> ways, List<Node> result, Way add) {
+    private static void addToResult(List<Way> ways, List<NodeData> result, Way add) {
         ways.remove(add);
-        final Node lastWayNode = add.getLastWayNode();
-        final Node firstWayNode = add.getFirstWayNode();
+        final NodeData lastWayNodeData = add.getLastWayNode();
+        final NodeData firstWayNodeData = add.getFirstWayNode();
         if (result.isEmpty()) {
-            result.addAll(add.getWayNodes());
+            result.addAll(add.getWayNodeData());
             return;
         }
-        final Node lastResult = result.get(result.size() - 1);
-        if (lastResult.equals(firstWayNode)) {
-            result.addAll(add.getWayNodes());
-        } else if (lastResult.equals(lastWayNode)) {
-            final List<Node> wayNodes = new ArrayList<>(add.getWayNodes());
-            Collections.reverse(wayNodes);
-            result.addAll(wayNodes);
+        final NodeData lastResult = result.get(result.size() - 1);
+        if (lastResult.equals(firstWayNodeData)) {
+            result.addAll(add.getWayNodeData());
+        } else if (lastResult.equals(lastWayNodeData)) {
+            final List<NodeData> wayNodeData = new ArrayList<>(add.getWayNodeData());
+            Collections.reverse(wayNodeData);
+            result.addAll(wayNodeData);
         } else {
             throw new IllegalArgumentException();
         }
     }
 
-    private static Way getFollowingWay(final Node lastWayNode, List<Way> ways) {
-        Preconditions.checkNotNull(lastWayNode);
+    private static Way getFollowingWay(final NodeData lastWayNodeData, List<Way> ways) {
+        Preconditions.checkNotNull(lastWayNodeData);
         return ways.stream()
-                .filter(way -> lastWayNode.equals(way.getFirstWayNode()) || lastWayNode.equals(way.getLastWayNode()))
+                .filter(way -> lastWayNodeData.equals(way.getFirstWayNode()) || lastWayNodeData.equals(way.getLastWayNode()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Not closed polygon"));
     }
 
-    private static String toString(String message, List<Node> result, List<Way> ways) {
+    private static String toString(String message, List<NodeData> result, List<Way> ways) {
         return String.format("%s (\ncurrent:\n" +
                 "\t%s\nremaining:\n" +
                 "\t%s)", message, toStringNodes(result), toStringWay(ways));
@@ -116,8 +116,8 @@ public class Polygon implements Shape {
                 .collect(Collectors.joining(",\n\t"));
     }
 
-    private static String toStringNodes(List<Node> nodes) {
-        return nodes.get(0) + "..." + nodes.get(nodes.size() - 1);
+    private static String toStringNodes(List<NodeData> nodeData) {
+        return nodeData.get(0) + "..." + nodeData.get(nodeData.size() - 1);
     }
 
     public boolean isNodeWithinArea(org.openstreetmap.osmosis.core.domain.v0_6.Node node) {

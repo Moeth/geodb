@@ -5,18 +5,18 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-class TypeStore<T extends AbstractEntity> {
+class TypeStore2<T> {
 
-    private static final Logger log = LoggerFactory.getLogger(TypeStore.class);
+    private static final Logger log = LoggerFactory.getLogger(TypeStore2.class);
     private final Map<Long, T> map = new HashMap<>();
     private final Set<Long> missing = new HashSet<>();
     private boolean somethingNewMissing = false;
 
-    void addToMap(T entity) {
-        missing.remove(entity.getId());
-        final T old = map.put(entity.getId(), entity);
+    void addToMap(long id, T entity) {
+        missing.remove(id);
+        final T old = map.put(id, entity);
         if (old != null && !old.equals(entity)) {
-            throw new IllegalArgumentException(String.format("Duplicate key %d", entity.getId()));
+            throw new IllegalArgumentException(String.format("Duplicate key %d", id));
         }
     }
 
@@ -38,8 +38,8 @@ class TypeStore<T extends AbstractEntity> {
         }
     }
 
-    boolean isMissing(T entity) {
-        return missing.contains(entity.getId());
+    boolean isMissing(long id) {
+        return missing.contains(id);
     }
 
     public Map<Long, T> getMap() {

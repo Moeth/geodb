@@ -22,14 +22,15 @@ import java.util.stream.Collectors;
 public class RelationHolder implements Consumer<Entity> {
 
     private static final Logger log = LoggerFactory.getLogger(RelationHolder.class);
-    private final TypeStore<Node> nodes = new TypeStore<>("nodes");
-    private final TypeStore<Way> ways = new TypeStore<>("ways");
-    private final TypeStore<Relation> relations = new TypeStore<>("relations");
+    private final TypeStore2<NodeData> nodes = new TypeStore2<>();
+    private final TypeStore2<Way> ways = new TypeStore2<>();
+    private final TypeStore<Relation> relations = new TypeStore<>();
 
     private final Predicate<AbstractEntity> predicate;
+    private final Predicate<Way> wayPredicate;
 
-    public static RelationHolder readRelationHolder(File file, Predicate<AbstractEntity> predicate) throws IOException {
-        RelationHolder relationHolder = new RelationHolder(predicate);
+    public static RelationHolder readRelationHolder(File file, Predicate<AbstractEntity> predicate, Predicate<Way> wayPredicate) throws IOException {
+        RelationHolder relationHolder = new RelationHolder(predicate, wayPredicate);
         relationHolder.read(file);
         return relationHolder;
     }
@@ -43,15 +44,16 @@ public class RelationHolder implements Consumer<Entity> {
         } while (relations.isSomethingNewMissing() || ways.isSomethingNewMissing() || nodes.isSomethingNewMissing());
     }
 
-    public RelationHolder(Predicate<AbstractEntity> predicate) {
+    public RelationHolder(Predicate<AbstractEntity> predicate, final Predicate<Way> wayPredicate) {
         this.predicate = predicate;
+        this.wayPredicate = wayPredicate;
     }
 
     @Override
     public void accept(final Entity entity) {
 //        log.info(entity.toString() + " " + entity.getTags().stream().map(t -> t.toString()).collect(Collectors.joining(",")));
-        if (entity instanceof org.openstreetmap.osmosis.core.domain.v0_6.Node) {
-            handleNode((org.openstreetmap.osmosis.core.domain.v0_6.Node) entity);
+        if (entity instanceof Node) {
+            handleNode((Node) entity);
         } else if (entity instanceof org.openstreetmap.osmosis.core.domain.v0_6.Way) {
             handleWay((org.openstreetmap.osmosis.core.domain.v0_6.Way) entity);
         } else if (entity instanceof org.openstreetmap.osmosis.core.domain.v0_6.Relation) {
@@ -63,17 +65,17 @@ public class RelationHolder implements Consumer<Entity> {
         }
     }
 
-    private void handleNode(org.openstreetmap.osmosis.core.domain.v0_6.Node node) {
-        Node n = new Node(node);
-        if (accept(n, nodes)) {
-            nodes.addToMap(n);
+    private void handleNode(Node node) {
+        NodeData n = new NodeData(node);
+        if (nodes.isMissing(node.getId())) {
+            nodes.addToMap(node.getId(), n);
         }
     }
 
     private void handleWay(org.openstreetmap.osmosis.core.domain.v0_6.Way way) {
         Way w = new Way(way, this);
-        if (accept(w, ways)) {
-            ways.addToMap(w);
+        if (wayPredicate.test(w) || ways.isMissing(w.getId())) {
+            ways.addToMap(w.getId(), w);
             for (WayNode wayNode : way.getWayNodes()) {
                 nodes.addMissing(wayNode.getNodeId());
             }
@@ -82,7 +84,7 @@ public class RelationHolder implements Consumer<Entity> {
 
     private void handleRelation(org.openstreetmap.osmosis.core.domain.v0_6.Relation relation) {
         Relation r = new Relation(relation, this);
-        if (accept(r, relations)) {
+        if (predicate.test(r) || relations.isMissing(r)) {
             relations.addToMap(r);
             for (RelationMember relationMember : relation.getMembers()) {
                 handleRelationMember(relationMember);
@@ -111,15 +113,11 @@ public class RelationHolder implements Consumer<Entity> {
         }
     }
 
-    private <T extends AbstractEntity> boolean accept(T entity, TypeStore<T> typeStore) {
-        return predicate.test(entity) || typeStore.isMissing(entity);
-    }
-
     Map<Long, Relation> getRelations() {
         return relations.getMap();
     }
 
-    public Node getNode(long id) {
+    public NodeData getNode(long id) {
         return nodes.get(id);
     }
 
