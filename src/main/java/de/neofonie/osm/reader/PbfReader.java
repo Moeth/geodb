@@ -13,28 +13,10 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class PbfReader {
 
     private static final Logger log = LoggerFactory.getLogger(PbfReader.class);
-
-    public static Stream<Entity> read(File file) throws IOException {
-//        StreamSupport.stream(iterable.spliterator(), false);
-
-        log.info(String.format("read %s", file.getAbsolutePath()));
-        final long start = System.currentTimeMillis();
-
-//        Sink sinkImplementation = new MySink(consumer);
-        try (BufferedInputStream input = openInputStream(file)) {
-            final RunnableSource reader = new OsmosisReader(input);
-            reader.setSink(sinkImplementation);
-            reader.run();
-        }
-
-        final long duration = (System.currentTimeMillis() - start) / 1000;
-        log.info(String.format("read %s finished in %ds", file.getAbsolutePath(), duration));
-    }
 
     public static void read(File file, Consumer<Entity> consumer) throws IOException {
         log.info(String.format("read %s", file.getAbsolutePath()));
@@ -62,8 +44,7 @@ public class PbfReader {
     @RequiredArgsConstructor
     private static class MySink implements Sink {
 
-        @NonNull
-        private final Consumer<Entity> consumer;
+        private final @NonNull Consumer<Entity> consumer;
         private long i = 0;
 
         @Override
@@ -80,16 +61,17 @@ public class PbfReader {
         }
 
         @Override
-        public void release() {
-        }
-
-        @Override
         public void initialize(Map<String, Object> stringObjectMap) {
 
         }
 
         @Override
         public void complete() {
+
+        }
+
+        @Override
+        public void close() {
 
         }
     }
