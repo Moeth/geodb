@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class AbstractEntity<T extends Entity> {
+public abstract class AbstractEntity<T extends Entity> implements Identifiable {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEntity.class);
     public static final List<String> HIGHWAY_RELEVANT = Arrays.asList("primary", "secondary", "tertiary", "unclassified", "residential", "service",

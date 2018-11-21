@@ -5,7 +5,6 @@ import de.neofonie.osm.reader.data.Administration;
 import de.neofonie.osm.reader.data.Street;
 import de.neofonie.osm.reader.vector.Boundary;
 import org.openstreetmap.osmosis.core.domain.v0_6.*;
-import org.openstreetmap.osmosis.core.domain.v0_6.RelationMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,7 @@ public class RelationHolder implements Consumer<Entity> {
         } while (relations.isSomethingNewMissing() || ways.isSomethingNewMissing() || nodes.isSomethingNewMissing());
     }
 
-    public RelationHolder(Predicate<AbstractEntity> predicate, final Predicate<Way> wayPredicate) {
+    private RelationHolder(Predicate<AbstractEntity> predicate, final Predicate<Way> wayPredicate) {
         this.predicate = predicate;
         this.wayPredicate = wayPredicate;
     }
@@ -194,6 +193,7 @@ public class RelationHolder implements Consumer<Entity> {
                 .filter(r -> r.isStreet())
 //                .filter(r -> r.isBoundary())
                 .map(r -> Street.create(r))
+                .distinct()
                 .collect(Collectors.toList());
 //        for (Street street : streets) {
 //            log.info("" + street.getTagString());

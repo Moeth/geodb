@@ -1,5 +1,6 @@
 package de.neofonie.osm.reader.pipeline;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,24 @@ public class Relation extends NamedEntity<org.openstreetmap.osmosis.core.domain.
         } catch (NumberFormatException e) {
             log.warn("NumberFormatException: " + e.getMessage() + " - " + getTagString());
             return Integer.MAX_VALUE;
+        }
+    }
+
+    @Getter
+    static class RelationMember {
+
+        private final org.openstreetmap.osmosis.core.domain.v0_6.RelationMember relationMember;
+        private final RelationHolder relationHolder;
+        private final String memberRole;
+
+        RelationMember(org.openstreetmap.osmosis.core.domain.v0_6.RelationMember relationMember, RelationHolder relationHolder) {
+            this.relationMember = relationMember;
+            this.relationHolder = relationHolder;
+            this.memberRole = relationMember.getMemberRole();
+        }
+
+        public AbstractEntity<?> getEntity() {
+            return relationHolder.getEntity(relationMember);
         }
     }
 }

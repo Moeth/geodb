@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-class TypeStore<T extends AbstractEntity> {
+class TypeStore<T extends Identifiable> {
 
     private static final Logger log = LoggerFactory.getLogger(TypeStore.class);
     private final Map<Long, T> map = new HashMap<>();

@@ -1,14 +1,16 @@
 package de.neofonie.osm.reader.pipeline;
 
+import com.google.common.collect.ImmutableSet;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.Way> {
+public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.Way> implements HasWays {
 
     private static final Logger log = LoggerFactory.getLogger(Way.class);
     private final List<NodeData> wayNodeData = new ArrayList<>();
@@ -38,8 +40,8 @@ public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.
     public static List<Way> getWays(List<AbstractEntity<?>> entities) {
         List<Way> result = new ArrayList<>();
         for (AbstractEntity abstractEntity : entities) {
-            if (abstractEntity instanceof Way) {
-                result.add((Way) abstractEntity);
+            if (abstractEntity instanceof HasWays) {
+                result.addAll(((HasWays) abstractEntity).getWays());
             } else if (abstractEntity instanceof Relation) {
                 final Relation relation = (Relation) abstractEntity;
                 final List<Way> ways = getWays(relation.getMembers());
@@ -59,5 +61,10 @@ public class Way extends NamedEntity<org.openstreetmap.osmosis.core.domain.v0_6.
     public NodeData getFirstWayNode() {
         final List<NodeData> wayNodeData = getWayNodeData();
         return wayNodeData.get(0);
+    }
+
+    @Override
+    public Collection<Way> getWays() {
+        return ImmutableSet.of(this);
     }
 }
